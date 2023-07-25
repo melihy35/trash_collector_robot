@@ -1,8 +1,8 @@
-import gripper
+import gripper_metal
 import cv2
 import numpy as np
 from PIL import Image
-grip = gripper.Gripper(port="/dev/ttyACM0")
+grip = gripper_metal.Gripper(port="/dev/ttyACM0")
 grip.start()
 
 #import findCenter as fc
@@ -27,10 +27,43 @@ upper_black = np.array([180, 85, 83])
 
 def find_obj(img,renk,robot):
     global dx,cisim_zaman,grip,toplanan_count,bias
-
+    kernel = np.ones((3, 3), np.uint8)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    
+    if renk==3:
+        red_mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+        red_mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        green_mask =cv2.inRange(hsv, lower_green, upper_green)
+        mask = cv2.bitwise_or(red_mask1, red_mask2)
+        mask= cv2.bitwise_or(mask,green_mask)
+        avoidance = cv2.erode(mask, kernel)
+        contours, _ = cv2.findContours(avoidance, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            
+            # Belirli bir boyuttan büyükse sýnýrlayýcý kutuyu çiz
+            if area > 2000 :
+                x, y, w, h = cv2.boundingRect(contour)
+                cisim_zaman=0
+                renk_bul=False
+                tamam=False
+                dx=300
+                # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                
+                # _,_,_,dx,_=findCenter(frame,[x,y,(w),(h)])
+                # if dx>0:
+                #     dx=-300
+                #     robot.set_motors(0.45,0.2)
+                #     time.sleep(0.3)
+                # else:
+                #     dx=300
+                #     robot.set_motors(0.2,0.45)
+                #     time.sleep(0.3)
+
+                #robot.setmotors(yavas_motor,0.06)
+                
+        
+                return frame,dx,renk_bul,tamam
 
     # Kýrmýzý, yeþil ve siyah renkleri tespit etmek için maskelemeleri yap
     # red_mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
@@ -55,7 +88,7 @@ def find_obj(img,renk,robot):
     
     
     
-    kernel = np.ones((3, 3), np.uint8)
+    
     image = cv2.erode(mask, kernel) 
     #image = cv2.dilate(image, kernel)
     
@@ -81,6 +114,7 @@ def find_obj(img,renk,robot):
                 tamam=True
                 toplanan_count+=1
                 grip.drop()
+                #veri_ver(biralidi)
                 bias -=40
                 time.sleep(0.5)
                 robot.backward(speed=0.2)
@@ -102,7 +136,6 @@ def find_obj(img,renk,robot):
         dx=dx+bias
     
     return result,dx,renk_bul,tamam
-
 
 
 def findCenter(imgCentered,objects,center_lines=True):
@@ -183,7 +216,7 @@ def Track_obj(robot,dx,var=True):
             #     robot.left(speed=0.2)
             # else:
             #     robot.right(speed=0.2)
-            robot.left(speed=0.2)
+            robot.left(speed=0.18)
     else:
         robot.stop()
 
@@ -199,6 +232,8 @@ camera ="nvarguscamerasrc sensor-id=0 ! video/x-raw(memory:NVMM), width=(int)128
 
 
 robot = Robot()
+
+#server = WEbverser()
 
 
 # Kamera baðlantýsýný baþlat
@@ -233,32 +268,38 @@ while True:
     
    
     if tamam==True:
-        renk=3
+        renk=3 #siyah renk (bardak)
+        #veri_ver(3)
 
 
     #print(renk)
-    #Track_obj(robot,dx,renk_bul)
+    Track_obj(robot,dx,renk_bul)
     
     
-    if grip.is_hold == gripper.Gripper.HOLD_NOT_OK:
-        if grip.is_detected == gripper.Gripper.DET_OK:
+    if grip.is_hold == gripper_metal.Gripper.HOLD_NOT_OK:
+        if grip.is_detected == gripper_metal.Gripper.DET_OK:
             robot.stop()
             #renk=grip.material()
             grip.hold()
-            time.sleep(0.8)
-            print("mateeril return = ",grip.material())
-            #renk=grip.material()
-            renk=1
-            #renk=1
-            #send_mesage()
-            #print("okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
+            time.sleep(0.92)
+            #print("mateeril return = ",grip.material())q
+            grip.material()
+            time.sleep(4)
+            metal_sorgu=grip.is_mat_metal
+            print("Bukunan materyal =",metal_sorgu)
+            if metal_sorgu==True:
+                renk=1
+            else:
+                renk=2
+            #server.veri_ver(renk)
+            #send_mesage() 
     
 
     # Sonuçlarý göster
     cv2.imshow("Kýrmýzý, Yeþil ve Siyah Nesneler", result)
     cv2.imshow("Orijinal Görüntü", frame)
 
-    # 'q' tuþuna basýlýnca döngüyü sonlandýr
+    # 'q' tuþuna basýlýnca döngüyü sonlandýqr
     if cv2.waitKey(1) & 0xFF == ord('q') :
         robot.stop()
         break

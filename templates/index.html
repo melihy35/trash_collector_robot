@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Kamera Görüntüsü</title>
+    <style>
+      body {
+        background-color: black;
+        margin: 0;
+        padding: 0;
+      }
+      #camera {
+        display: block;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="color: white; text-align: center;">Kamera Görüntüsü</h1>
+    <img id="camera" src="{{ url_for('video_feed') }}" width="640" height="480" />
+  </body>
+</html>

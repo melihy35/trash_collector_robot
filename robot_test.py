@@ -14,7 +14,7 @@ robot = Robot()
 # time.sleep(1)
 # robot.right(speed=0.15)
 # time.sleep(1)
-robot.forward(speed=0.1)
+robot.backward(speed=0.2)
 time.sleep(0.5)
 
 # for i in range(0.5, 0, -0.05):

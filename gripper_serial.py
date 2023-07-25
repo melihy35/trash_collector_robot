@@ -4,7 +4,7 @@ from time import sleep
 
 
 class GripperSerial:
-    def __init__(self, port="/dev/ttyUSB0", baudrate=9600):
+    def __init__(self, port="/dev/ttyACM0", baudrate=9600):
         self.port = port
         self.baudrate = baudrate
         self.serial = Serial()
@@ -33,7 +33,8 @@ class GripperSerial:
         return self.read()
 
     def write_and_read_mat(self, msg: str):
+        print("Buraya girdi",msg)
         self.write(msg)
-        sleep(5)
+        sleep(3.8)
         return self.read()
 

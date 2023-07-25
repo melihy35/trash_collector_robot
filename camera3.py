@@ -8,7 +8,7 @@ grip.start()
 #import findCenter as fc
 from robot import Robot
 import time
-bias=0
+bias=40
 
 # Kýrmýzý rengin HSV aralýðýný tanýmla
 lower_red1 = np.array([0, 100, 100])
@@ -24,56 +24,49 @@ upper_green = np.array([160, 255, 219])
 lower_black = np.array([0, 0, 0])
 upper_black = np.array([180, 85, 83])
 
-# Siyah rengin HSV aralýðýný tanýmla
-lower_orange = np.array([11, 48, 130])
-upper_orange = np.array([21, 173, 183])
 
-kernel = np.ones((3, 3), np.uint8)
+
 
 def find_obj(img,renk,robot):
-    global dx,cisim_zaman,grip,toplanan_count,bias,kernel
+    global dx,cisim_zaman,grip,toplanan_count,bias
+    kernel = np.ones((3, 3), np.uint8)
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
     
-
-    # Kýrmýzý, yeþil ve siyah renkleri tespit etmek için maskelemeleri yap
-    # red_mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-    # red_mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-    # green_mask = cv2.inRange(hsv, lower_green, upper_green)
-    # black_mask = cv2.inRange(hsv, lower_black, upper_black)
-    
-
-    avoidance_mask=cv2.inRange(hsv, lower_orange, upper_orange)
-    avoidance = cv2.erode(avoidance_mask, kernel)
-    contours, _ = cv2.findContours(avoidance, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    for contour in contours:
-        area = cv2.contourArea(contour)
-        
-        # Belirli bir boyuttan büyükse sýnýrlayýcý kutuyu çiz
-        if area > 2000 :
-            x, y, w, h = cv2.boundingRect(contour)
-            cisim_zaman=0
-            renk_bul=True
-            tamam=False
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    if renk==3:
+        red_mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+        red_mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        green_mask =cv2.inRange(hsv, lower_green, upper_green)
+        mask = cv2.bitwise_or(red_mask1, red_mask2)
+        mask= cv2.bitwise_or(mask,green_mask)
+        avoidance = cv2.erode(mask, kernel)
+        contours, _ = cv2.findContours(avoidance, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            area = cv2.contourArea(contour)
             
-            _,_,_,dx,_=findCenter(frame,[x,y,(w),(h)])
-            if dx>0:
-                dx=-300
-                robot.set_motors(0.45,0.2)
-                time.sleep(0.3)
-            else:
+            # Belirli bir boyuttan büyükse sýnýrlayýcý kutuyu çiz
+            if area > 2000 :
+                x, y, w, h = cv2.boundingRect(contour)
+                cisim_zaman=0
+                renk_bul=False
+                tamam=False
                 dx=300
-                robot.set_motors(0.2,0.45)
-                time.sleep(0.3)
+                # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                
+                # _,_,_,dx,_=findCenter(frame,[x,y,(w),(h)])
+                # if dx>0:
+                #     dx=-300
+                #     robot.set_motors(0.45,0.2)
+                #     time.sleep(0.3)
+                # else:
+                #     dx=300
+                #     robot.set_motors(0.2,0.45)
+                #     time.sleep(0.3)
 
-            #robot.setmotors(yavas_motor,0.06)
-            
-    
-            return frame,dx,renk_bul,tamam
-
+                #robot.setmotors(yavas_motor,0.06)
+                
+        
+                return frame,dx,renk_bul,tamam
 
     # Orijinal görüntü üzerinde sadece kýrmýzý, yeþil ve siyah renkleri göster
     if renk==1:#red
@@ -91,7 +84,6 @@ def find_obj(img,renk,robot):
     
     
     
-    
     image = cv2.erode(mask, kernel) 
     #image = cv2.dilate(image, kernel)
     
@@ -103,7 +95,7 @@ def find_obj(img,renk,robot):
     id=0
     max_area=-1
     # Her bir kontür için sýnýrlayýcý kutularý (bounding box) çiz
-    
+    work_delay=time.time()
     for contour in contours:
         area = cv2.contourArea(contour)
         
@@ -117,7 +109,7 @@ def find_obj(img,renk,robot):
                 tamam=True
                 toplanan_count+=1
                 grip.drop()
-                bias -=0
+                bias -=40
                 time.sleep(0.5)
                 robot.backward(speed=0.2)
                 time.sleep(0.5)
@@ -139,7 +131,11 @@ def find_obj(img,renk,robot):
     
     return result,dx,renk_bul,tamam
 
-
+def Cam_frame():
+    _, buffer = cv2.imencode('.jpg', frame)
+    frame = buffer.tobytes()
+    yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    pass
 
 def findCenter(imgCentered,objects,center_lines=True):
     """
@@ -191,8 +187,8 @@ def findCenter(imgCentered,objects,center_lines=True):
 
 def Track_obj(robot,dx,var=True):
     global cisim_zaman
-    hizli_motor=0.19
-    yavas_motor=0.15
+    hizli_motor=0.17
+    yavas_motor=0.14
     if abs(dx)>250:
         if dx>0:
             #robot.left(speed=0.15)
@@ -273,16 +269,20 @@ while True:
 
 
     #print(renk)
-    Track_obj(robot,dx,renk_bul)
+    #Track_obj(robot,dx,renk_bul)
     
     
     if grip.is_hold == gripper.Gripper.HOLD_NOT_OK:
-        #print("yesssssssssssssssssssssssssss")
         if grip.is_detected == gripper.Gripper.DET_OK:
             robot.stop()
+            #renk=grip.material()
             grip.hold()
             time.sleep(0.8)
+            #print("mateeril return = ",grip.material())
+            #renk=grip.material()
             renk=1
+            
+            #send_mesage()
             #print("okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
     
 
