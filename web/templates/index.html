@@ -1,13 +1,9 @@
-
 <!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>
-      
-
-      Ayristirma Sonucu</title>
+    <title>Ayristirma Sonucu</title>
 
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
@@ -43,14 +39,17 @@
     </nav>
     <button class="btn-close btn btn-sm">×</button>
     <div class="container">
-      <div class="hero">
-        <h1>Ayrýþtýrma Sonucu</h1>
+      <div class="hero" id="state-box">
+        <div class="state-box-content">
+          <!-- The state text will be placed here -->
+        </div>
       </div>
     </div>
     <div class="display-box" id="display-box"></div>
     <script type="text/javascript">
       const displayBox = document.getElementById("display-box");
-      const MAX_DATA_COUNT = 1;
+      const stateBox = document.getElementById("state-box");
+      const MAX_DATA_COUNT = 5;
       var counter = 0;
       //connect to the socket server.
       //var socket = io.connect("http://" + document.domain + ":" + location.port);
@@ -58,28 +57,33 @@
 
       //receive details from server
       socket.on("updateSensorData", function (msg) {
-       // console.log("Received sensorData :: "  + msg.value);
-      
-      
-      
+        console.log("Received sensorData :: " + msg.date + "::" + msg.value + '::' + msg.seqNumber);
+
         const content = `
         <div class="display-box">
+          <h1>${msg.seqNumber}</h1>
           <span>
             <p>
-              <strong>${msg.value}</strong>
+              <strong>${msg.value}</strong> ${msg.date}
             </p>
           </span>
         </div>
         `;
 
-        displayBox.insertAdjacentHTML("beforeend", content);
         
-        const dataElements = displayBox.getElementsByClassName("display-box");
-        if (dataElements.length > MAX_DATA_COUNT) {
-            displayBox.removeChild(dataElements[0]);
-         } 
-       
+        
+        displayBox.insertAdjacentHTML("beforeend", content);
       });
+      socket.on("updateStateData",function(state) {
+        console.log("Current state is :: " + state.state);
+        const stateContent = `
+        <div class="state-box-content">
+          <state-box>${state.state}</state-box>
+        </div>
+      `;
+      stateBox.innerHTML = stateContent;  // Update the content of the box every call of this function
+
+      });  
     </script>
   </body>
 </html>
