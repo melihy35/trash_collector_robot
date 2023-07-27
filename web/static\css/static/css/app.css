@@ -1,0 +1,47 @@
+
+.hero {
+    background: #eee;
+    height : 15em;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 1em;
+    text-align: center; /* Center the content horizontally */
+  }
+  
+  /* Update the CSS selector for the state text */
+  #state-box .state-box-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: deepskyblue;
+    font-style: italic;
+    font-size: large;
+    height: 100%; /* Ensure the content takes full height */
+  }
+  .state-box-content state-box {
+    /* CSS for the state-box element (Assuming it's a custom element) */
+    color: deepskyblue;
+    font-style: italic;
+    font-size: large;
+  }
+
+
+.display-box {  /*Mesajların gösterileceği kutu  */
+    margin: auto;
+    display: flex;
+    align-items: left;
+    justify-content: center;
+    width: 30em;
+    height: 20em;
+    border: 1px solid #333;
+    box-shadow: 8px 8px 5px #444;
+    padding: 8px 12px;
+    background-image: linear-gradient(180deg, #fff, #ddd 40%, #ccc);
+}
+
+.content{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
