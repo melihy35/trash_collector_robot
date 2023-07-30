@@ -1,6 +1,7 @@
 
 ## trash_collector_robot
 Solid Waste Collecting and Sorting Robot
+![Robot](jetbot.jpg)
 
 ## Table of Contents
 - [Introduction](#introduction)
@@ -21,7 +22,7 @@ To install the **trash_collector_robot**, follow these steps:
 
 
 ```bash
-git clone melihy35/trash_collector_robot.git
+git clone https://github.com/melihy35/trash_collector_robot.git
 ```
 
 2. Navigate to the project directory:
