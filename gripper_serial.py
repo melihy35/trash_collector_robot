@@ -33,8 +33,8 @@ class GripperSerial:
         return self.read()
 
     def write_and_read_mat(self, msg: str):
-        print("Buraya girdi",msg)
+        #print("Buraya girdi",msg)
         self.write(msg)
-        sleep(3.8)
+        sleep(7)
         return self.read()
 

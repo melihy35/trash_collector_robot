@@ -62,12 +62,12 @@ def find_obj(img,renk,robot):
             _,_,_,dx,_=findCenter(frame,[x,y,(w),(h)])
             if dx>0:
                 dx=-300
-                robot.set_motors(0.45,0.2)
-                time.sleep(0.3)
+                #robot.set_motors(0.45,0.2)
+                #time.sleep(0.3)
             else:
                 dx=300
-                robot.set_motors(0.2,0.45)
-                time.sleep(0.3)
+                #robot.set_motors(0.2,0.45)
+                #time.sleep(0.3)
 
             #robot.setmotors(yavas_motor,0.06)
             

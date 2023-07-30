@@ -1,32 +1,38 @@
+import time
 import gripper_metal
 import cv2
 import numpy as np
-from PIL import Image
+from client import send_updated_data    # update
+#sudo systemctl restart nvargus-daemon.serviceD
+
+
 grip = gripper_metal.Gripper(port="/dev/ttyACM0")
 grip.start()
 
 #import findCenter as fc
 from robot import Robot
-import time
-bias=40
 
-# Kýrmýzý rengin HSV aralýðýný tanýmla
+bias=70
+
+# kirmizi rengin HSV 
 lower_red1 = np.array([0, 100, 100])
 upper_red1 = np.array([10, 255, 255])
 lower_red2 = np.array([160, 100, 100])
 upper_red2 = np.array([179, 255, 255])
 
-    # Yeþil rengin HSV aralýðýný tanýmla
+    # Yesil rengin HSV 
 lower_green = np.array([31, 84, 50])
 upper_green = np.array([160, 255, 219])
 
-    # Siyah rengin HSV aralýðýný tanýmla
+    # Siyah rengin HSV 
 lower_black = np.array([0, 0, 0])
 upper_black = np.array([180, 85, 83])
 
 
 def find_obj(img,renk,robot):
+    #work_delay=time.time()
     global dx,cisim_zaman,grip,toplanan_count,bias
+    
     kernel = np.ones((3, 3), np.uint8)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
@@ -41,38 +47,21 @@ def find_obj(img,renk,robot):
         for contour in contours:
             area = cv2.contourArea(contour)
             
-            # Belirli bir boyuttan büyükse sýnýrlayýcý kutuyu çiz
-            if area > 2000 :
+            # Belirli bir boyuttan buyukse sinirlendirici kutuyu ciz
+            if area > 2500 :
                 x, y, w, h = cv2.boundingRect(contour)
-                cisim_zaman=0
                 renk_bul=False
                 tamam=False
-                dx=300
-                # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                
-                # _,_,_,dx,_=findCenter(frame,[x,y,(w),(h)])
-                # if dx>0:
-                #     dx=-300
-                #     robot.set_motors(0.45,0.2)
-                #     time.sleep(0.3)
-                # else:
-                #     dx=300
-                #     robot.set_motors(0.2,0.45)
-                #     time.sleep(0.3)
-
-                #robot.setmotors(yavas_motor,0.06)
-                
+                dx=8888
+                #cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
         
                 return frame,dx,renk_bul,tamam
 
-    # Kýrmýzý, yeþil ve siyah renkleri tespit etmek için maskelemeleri yap
-    # red_mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-    # red_mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-    # green_mask = cv2.inRange(hsv, lower_green, upper_green)
-    # black_mask = cv2.inRange(hsv, lower_black, upper_black)
     
-
-    # Orijinal görüntü üzerinde sadece kýrmýzý, yeþil ve siyah renkleri göster
+    
+    #print("elapsed time 1 =",time.time()-work_delay)
+    #work_delay=time.time()
+    # Orijinal goruntu uzerinde sadece kirmizi, yesil ve siyah renkleri goster
     if renk==1:#red
         red_mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
         red_mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
@@ -81,16 +70,13 @@ def find_obj(img,renk,robot):
         mask = cv2.inRange(hsv, lower_green, upper_green)
     elif renk==3:
         mask = cv2.inRange(hsv, lower_black, upper_black)
-    # Konturlarý bul
     
-    result = cv2.bitwise_and(img, img, mask=mask)
-    
+    result = 0#cv2.bitwise_and(img, img, mask=mask)
     
     
     
     
     image = cv2.erode(mask, kernel) 
-    #image = cv2.dilate(image, kernel)
     
     contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     #print("len conut",len(contours),"elapsed time 1 =",time.time()-work_delay)
@@ -99,27 +85,27 @@ def find_obj(img,renk,robot):
     renk_bul=False
     id=0
     max_area=-1
-    # Her bir kontür için sýnýrlayýcý kutularý (bounding box) çiz
-    work_delay=time.time()
+    # Her bir kontur icin sr (bounding box) ciz
+    
     for contour in contours:
         area = cv2.contourArea(contour)
         
-        # Belirli bir boyuttan büyükse sýnýrlayýcý kutuyu çiz
+        # Belirli bir boyuttan buyukse  kutuyu ciz
         if area > 750 and area>max_area:
             max_area=area
             x, y, w, h = cv2.boundingRect(contour)
             #print("width = ",w)
             
-            if w >520 and (renk==1 or renk==2) :
+            if w >510 and (renk==1 or renk==2) :
                 tamam=True
                 toplanan_count+=1
                 grip.drop()
                 #veri_ver(biralidi)
                 bias -=40
                 time.sleep(0.5)
-                robot.backward(speed=0.2)
+                robot.backward(speed=0.25)
                 time.sleep(0.5)
-                robot.left(speed=0.2)
+                robot.left(speed=0.25)
                 time.sleep(0.5)
                 robot.stop
             #print("area of green",w)
@@ -127,14 +113,19 @@ def find_obj(img,renk,robot):
             renk_bul=True
             id+=1
             
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-            cv2.putText(frame, f"{id:.2f}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            #cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            #cv2.putText(frame, f"{id:.2f}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
             
             _,_,_,dx,_=findCenter(frame,[x,y,(w),(h)])
+       
+
+
           
-    if renk!=3:
+    if renk==2:
         dx=dx+bias
     
+    #print("elapsed time 2 =",time.time()-work_delay)
+
     return result,dx,renk_bul,tamam
 
 
@@ -188,9 +179,11 @@ def findCenter(imgCentered,objects,center_lines=True):
 
 def Track_obj(robot,dx,var=True):
     global cisim_zaman
-    hizli_motor=0.17
+    hizli_motor=0.18
     yavas_motor=0.14
-    if abs(dx)>250:
+    if dx==8888:
+        robot.left(speed=0.18)
+    elif abs(dx)>250:
         if dx>0:
             #robot.left(speed=0.15)
             robot.set_motors(0.04,hizli_motor)
@@ -205,17 +198,14 @@ def Track_obj(robot,dx,var=True):
             #robot.right(speed=0.15)
             robot.set_motors(yavas_motor,0.06)
     elif var==True:
-        robot.forward(speed=0.18)
-    elif cisim_zaman>3:
-        if 140>cisim_zaman%300>120:
-            robot.forward(speed=0.15)
-        else:    
-            # random_number = np.random.choice([0, 1])
-            # if random_number==1:
-
-            #     robot.left(speed=0.2)
-            # else:
-            #     robot.right(speed=0.2)
+        robot.forward(speed=0.19)
+    elif cisim_zaman>10:
+        if 132>cisim_zaman%300>120:
+            robot.backward(speed=0.28)
+        elif 235>cisim_zaman%300>220:
+            robot.forward(speed=0.28)
+            robot.set_motors(0.05,0.2)
+        else:
             robot.left(speed=0.18)
     else:
         robot.stop()
@@ -233,10 +223,21 @@ camera ="nvarguscamerasrc sensor-id=0 ! video/x-raw(memory:NVMM), width=(int)128
 
 robot = Robot()
 
-#server = WEbverser()
+#swep
+if True:
+
+    robot.left(speed=0.18)
+    time.sleep(0.25)
+    robot.right(speed=0.18)
+    time.sleep(0.25)
+    robot.left(speed=0.18)
+    time.sleep(0.25)
+    robot.right(speed=0.18)
+    time.sleep(0.25)
+    robot.stop()
 
 
-# Kamera baðlantýsýný baþlat
+# Kamera 
 kamera = cv2.VideoCapture(camera)
 
 start_time = time.time()
@@ -248,8 +249,10 @@ renk=3
 prev_frame_time = 0
 new_frame_time = 0
 
+
+
 while True:
-    # Kameradan görüntü al
+    # Kameradan goruntu al
     
     dx=-1
     ret, frame = kamera.read()
@@ -257,49 +260,59 @@ while True:
     cisim_zaman += 1
 
     
-    new_frame_time = time.time()
-    fps = 1/(new_frame_time-prev_frame_time)
-    prev_frame_time = new_frame_time
-    cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    # new_frame_time = time.time()
+    # fps = 1/(new_frame_time-prev_frame_time)
+    # prev_frame_time = new_frame_time
+    # cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     
-    
+    #work_dela=time.time()
     result,dx,renk_bul,tamam = find_obj(frame,renk,robot)    
 
+    #print("elapsed time 3 =",time.time()-work_dela)
     
    
     if tamam==True:
         renk=3 #siyah renk (bardak)
-        #veri_ver(3)
+        send_updated_data('', 'araniyor')  # update
 
+    #work_delay=time.time()
 
-    #print(renk)
     Track_obj(robot,dx,renk_bul)
-    
+
+    #print("elapsed time 2 =",time.time()-work_delay)    
     
     if grip.is_hold == gripper_metal.Gripper.HOLD_NOT_OK:
         if grip.is_detected == gripper_metal.Gripper.DET_OK:
             robot.stop()
             #renk=grip.material()
             grip.hold()
-            time.sleep(0.92)
+            send_updated_data('', 'tutuluyor')  # update
+            time.sleep(0.95)
             #print("mateeril return = ",grip.material())q
             grip.material()
-            time.sleep(4)
+            send_updated_data('', 'materyal tespit ediliyor')  # update
+            time.sleep(7)
+            robot.backward(speed=0.20)
+            time.sleep(0.5)
             metal_sorgu=grip.is_mat_metal
-            print("Bukunan materyal =",metal_sorgu)
+            #time.sleep(2)
+            #print("Bukunan materyal =",metal_sorgu)
             if metal_sorgu==True:
                 renk=1
+                send_updated_data('metal', 'metal tespit edildi')  # update
             else:
                 renk=2
+                send_updated_data('plastik', 'plastik tespit edildi')  # update
             #server.veri_ver(renk)
             #send_mesage() 
     
 
-    # Sonuçlarý göster
-    cv2.imshow("Kýrmýzý, Yeþil ve Siyah Nesneler", result)
-    cv2.imshow("Orijinal Görüntü", frame)
+    # Sonuclari goster
+    #cv2.imshow("kirmizi, yesil ve Siyah Nesneler", result)
+    #cv2.imshow("Orijinal Goruntu", frame)
+    
 
-    # 'q' tuþuna basýlýnca döngüyü sonlandýqr
+    # 'q' tuþuna basilinca donguyu sonlandir
     if cv2.waitKey(1) & 0xFF == ord('q') :
         robot.stop()
         break
@@ -311,7 +324,8 @@ while True:
         break
         
 
-# Kamera baðlantýsýný ve pencereleri kapat
+# Kamera  ve pencereleri kapat
+send_updated_data('', 'gorev tamamlandi')  # update
 kamera.release()
 cv2.destroyAllWindows()
 robot.stop()

@@ -23,9 +23,9 @@ while True:
 
     if cmd =="al":
         grip.hold()
-        time.sleep(0.9)
+        time.sleep(1)
         grip.material()
-        time.sleep(3.7)
+        time.sleep(7)
         print("******son buldu")
 
 
