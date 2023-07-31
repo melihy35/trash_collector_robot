@@ -302,7 +302,7 @@ while True:
                 send_updated_data('metal', 'metal tespit edildi')  # update
             else:
                 renk=2
-                send_updated_data('plastik', 'plastik tespit edildi')  # update
+                send_updated_data('plastik', 'plastik/cam tespit edildi')  # update
             #server.veri_ver(renk)
             #send_mesage() 
     
